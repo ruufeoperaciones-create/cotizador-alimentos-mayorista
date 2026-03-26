@@ -5,6 +5,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from datetime import datetime
+from reportlab.lib.styles import ParagraphStyle
 
 st.set_page_config(page_title="Cotizador mayorista", layout="wide")
 
@@ -225,7 +226,13 @@ if st.session_state.pedido:
     # -----------------------------
     def generar_pdf(df, total_cajas, total_valor, tipo_envio):
         file_path = "cotizacion.pdf"
-        doc = SimpleDocTemplate(file_path)
+        doc = SimpleDocTemplate(
+         file_path,
+         leftMargin=40,
+         rightMargin=40,
+         topMargin=40,
+         bottomMargin=40
+        )
         elements = []
         styles = getSampleStyleSheet()
 
@@ -237,22 +244,32 @@ if st.session_state.pedido:
         elements.append(Paragraph("Cotización", styles['Title']))
         elements.append(Spacer(1,12))
 
-        elements.append(Paragraph(f"Cliente: {cliente}", styles['Normal']))
-        elements.append(Paragraph(f"País: {pais}", styles['Normal']))
-        elements.append(Paragraph(f"Email: {email}", styles['Normal']))
-        elements.append(Paragraph(f"Fecha: {fecha}", styles['Normal']))
+        def campo(label, valor):
+            valor = valor if valor else "__________________________"
+            return Paragraph(f"<b>{label}:</b> {valor}", styles['Normal'])
+
+        elements.append(campo("Cliente", cliente))
+        elements.append(campo("País", pais))
+        elements.append(campo("Email", email))
+        elements.append(campo("Fecha", fecha))
         elements.append(Spacer(1,12))
 
         data = [["Producto","Marca","Cantidad","Precio","Total"]]
 
         for _, row in df.iterrows():
             data.append([
-                row['Producto'],
+                Paragraph(str(row['Producto']), wrap_style),
                 row['Marca'],
                 row['Cantidad'],
                 f"USD {row['Precio']:,.2f}",
                 f"USD {row['Total']:,.2f}"
             ])
+
+        wrap_style = ParagraphStyle(
+            name='wrap',
+            fontSize=8,
+            leading=10
+        )
 
         col_widths = [150, 100, 90, 90, 90]
         table = Table(data, colWidths=col_widths)
@@ -265,9 +282,20 @@ if st.session_state.pedido:
 
         elements.append(table)
         elements.append(Spacer(1,12))
-        elements.append(Paragraph(f"Total cajas: {total_cajas} Cajas", styles['Normal']))
-        elements.append(Paragraph(f"Total USD: USD {total_valor:,.2f}", styles['Normal']))
-        elements.append(Paragraph(f"Envío: {tipo_envio}", styles['Normal']))
+        totales_data = [
+         ["", f"Total cajas: {total_cajas} Cajas"],
+         ["", f"Total USD: USD {total_valor:,.2f}"],
+         ["", f"Envío: {tipo_envio}"]
+        ]
+
+        totales_table = Table(totales_data, colWidths=[300, 200])
+
+        totales_table.setStyle(TableStyle([
+            ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+         ('FONTNAME', (1,0), (1,-1), 'Helvetica-Bold')
+        ]))
+
+        elements.append(totales_table)
 
         doc.build(elements)
         return file_path
