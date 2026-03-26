@@ -49,33 +49,32 @@ with col_title:
 # -----------------------------
 if st.checkbox("Modo cliente nuevo"):
     st.info("""
-st.info("""
-👋 **Bienvenido al cotizador mayorista**
+    👋 **Bienvenido al cotizador mayorista**
 
-Sigue estos pasos para crear tu pedido de forma fácil:
+    Sigue estos pasos para crear tu pedido de forma fácil:
 
-**1. Selecciona el tipo de compra**
-- *Cajas sueltas*: desde 1 caja por producto  
-- *Pallet consolidado*: recomendado para volúmenes medios  
-- *Contenedor*: mínimo 25 cajas por producto  
+    **1. Selecciona el tipo de compra**
+    - *Cajas sueltas*: desde 1 caja por producto  
+    - *Pallet consolidado*: recomendado para volúmenes medios  
+    - *Contenedor*: mínimo 25 cajas por producto  
 
-**2. Encuentra tus productos**
-- Usa el buscador o filtra por *marca* y *categoría*  
-- Explora el catálogo organizado por marcas  
+    **2. Encuentra tus productos**
+    - Usa el buscador o filtra por *marca* y *categoría*  
+    - Explora el catálogo organizado por marcas  
 
-**3. Agrega cantidades**
-- Ingresa el número de cajas por producto  
-- El sistema respeta automáticamente los mínimos de compra (MOQ)  
+    **3. Agrega cantidades**
+    - Ingresa el número de cajas por producto  
+    - El sistema respeta automáticamente los mínimos de compra (MOQ)  
+ 
+    **4. Revisa tu pedido**
+    - En la parte inferior verás el resumen con totales  
+    - También recibirás una sugerencia del tipo de envío  
 
-**4. Revisa tu pedido**
-- En la parte inferior verás el resumen con totales  
-- También recibirás una sugerencia del tipo de envío  
+    **5. Descarga tu cotización**
+     - Genera un PDF listo para compartir o enviar  
 
-**5. Descarga tu cotización**
-- Genera un PDF listo para compartir o enviar  
-
-💡 *Tip:* A mayor volumen, mejores eficiencias logísticas (pallet o contenedor)
-""")
+    💡 *Tip:* A mayor volumen, mejores eficiencias logísticas (pallet o contenedor)
+    """)
 
 # -----------------------------
 # DATOS CLIENTE
