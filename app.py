@@ -108,15 +108,6 @@ if categoria_sel != "Todas" and 'CATEGORÍA' in df.columns:
 
 st.write(f"Productos mostrados: {len(df)}")
 
-# Botones navegación
-col_nav1, col_nav2 = st.columns(2)
-with col_nav1:
-    if st.button("⬆ Volver arriba"):
-        st.markdown("#")
-with col_nav2:
-    if st.button("✅ Finalizar pedido"):
-        st.markdown("## Resumen del pedido")
-
 st.divider()
 
 # -----------------------------
