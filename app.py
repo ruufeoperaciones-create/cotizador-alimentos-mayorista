@@ -235,6 +235,14 @@ if st.session_state.pedido:
         )
         elements = []
         styles = getSampleStyleSheet()
+        from reportlab.lib.styles import ParagraphStyle
+
+        wrap_style = ParagraphStyle(
+            name='wrap',
+            fontSize=8,
+            leading=9,
+            wordWrap='CJK'
+        )
 
         try:
             elements.append(Image("logo.png", width=100, height=50))
