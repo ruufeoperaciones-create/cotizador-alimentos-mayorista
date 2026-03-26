@@ -49,13 +49,33 @@ with col_title:
 # -----------------------------
 if st.checkbox("Modo cliente nuevo"):
     st.info("""
-    👋 Bienvenido:
-    1. Selecciona tipo de pedido
-    2. Usa filtros para encontrar productos
-    3. Ingresa cantidades
-    4. Revisa resumen abajo
-    5. Descarga tu cotización
-    """)
+st.info("""
+👋 **Bienvenido al cotizador mayorista**
+
+Sigue estos pasos para crear tu pedido de forma fácil:
+
+**1. Selecciona el tipo de compra**
+- *Cajas sueltas*: desde 1 caja por producto  
+- *Pallet consolidado*: recomendado para volúmenes medios  
+- *Contenedor*: mínimo 25 cajas por producto  
+
+**2. Encuentra tus productos**
+- Usa el buscador o filtra por *marca* y *categoría*  
+- Explora el catálogo organizado por marcas  
+
+**3. Agrega cantidades**
+- Ingresa el número de cajas por producto  
+- El sistema respeta automáticamente los mínimos de compra (MOQ)  
+
+**4. Revisa tu pedido**
+- En la parte inferior verás el resumen con totales  
+- También recibirás una sugerencia del tipo de envío  
+
+**5. Descarga tu cotización**
+- Genera un PDF listo para compartir o enviar  
+
+💡 *Tip:* A mayor volumen, mejores eficiencias logísticas (pallet o contenedor)
+""")
 
 # -----------------------------
 # DATOS CLIENTE
@@ -176,6 +196,19 @@ if st.session_state.pedido:
     total_valor = pedido_df["Total"].sum()
     pallets = total_cajas / 36
 
+    # Tipo de envío
+    if pedido_tipo == "Cajas sueltas":
+        tipo_envio = "Carga suelta / Courier"
+    elif pedido_tipo == "Pallet consolidado":
+        tipo_envio = "No cumple mínimo" if total_cajas < 80 else f"{round(pallets,1)} pallets"
+    else:
+        if pallets <= 11:
+            tipo_envio = "Contenedor 20FT"
+        elif pallets <= 24:
+            tipo_envio = "Contenedor 40FT"
+        else:
+            tipo_envio = "Más de un contenedor"
+
     pedido_df_display = pedido_df.copy()
     pedido_df_display["Precio"] = pedido_df_display["Precio"].apply(lambda x: f"USD {x:,.2f}")
     pedido_df_display["Total"] = pedido_df_display["Total"].apply(lambda x: f"USD {x:,.2f}")
@@ -185,6 +218,65 @@ if st.session_state.pedido:
     st.metric("Total cajas", f"{total_cajas} Cajas")
     st.metric("Total USD", f"USD {total_valor:,.2f}")
     st.metric("Pallets estimados", round(pallets,2))
+
+    st.success(f"Tipo de envío sugerido: {tipo_envio}")
+
+    # -----------------------------
+    # PDF
+    # -----------------------------
+    def generar_pdf(df, total_cajas, total_valor, tipo_envio):
+        file_path = "cotizacion.pdf"
+        doc = SimpleDocTemplate(file_path)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        try:
+            elements.append(Image("logo.png", width=100, height=50))
+        except:
+            pass
+
+        elements.append(Paragraph("Cotización", styles['Title']))
+        elements.append(Spacer(1,12))
+
+        elements.append(Paragraph(f"Cliente: {cliente}", styles['Normal']))
+        elements.append(Paragraph(f"País: {pais}", styles['Normal']))
+        elements.append(Paragraph(f"Email: {email}", styles['Normal']))
+        elements.append(Paragraph(f"Fecha: {fecha}", styles['Normal']))
+        elements.append(Spacer(1,12))
+
+        data = [["Producto","Marca","Cantidad","Precio","Total"]]
+
+        for _, row in df.iterrows():
+            data.append([
+                row['Producto'],
+                row['Marca'],
+                row['Cantidad'],
+                f"USD {row['Precio']:,.2f}",
+                f"USD {row['Total']:,.2f}"
+            ])
+
+        col_widths = [150, 100, 90, 90, 90]
+        table = Table(data, colWidths=col_widths)
+
+        table.setStyle(TableStyle([
+            ('BACKGROUND',(0,0),(-1,0),colors.grey),
+            ('TEXTCOLOR',(0,0),(-1,0),colors.whitesmoke),
+            ('GRID',(0,0),(-1,-1),1,colors.black)
+        ]))
+
+        elements.append(table)
+        elements.append(Spacer(1,12))
+        elements.append(Paragraph(f"Total cajas: {total_cajas} Cajas", styles['Normal']))
+        elements.append(Paragraph(f"Total USD: USD {total_valor:,.2f}", styles['Normal']))
+        elements.append(Paragraph(f"Envío: {tipo_envio}", styles['Normal']))
+
+        doc.build(elements)
+        return file_path
+
+    pdf_file = generar_pdf(pedido_df, total_cajas, total_valor, tipo_envio)
+
+    with open(pdf_file, "rb") as f:
+        st.download_button("Descargar cotización PDF", f, file_name="cotizacion.pdf")
 
 else:
     st.info("Aún no has agregado productos")
