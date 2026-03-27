@@ -45,7 +45,7 @@ with col_title:
 # MODO CLIENTE NUEVO
 # -----------------------------
 if st.checkbox("Modo cliente nuevo"):
-st.info("""
+   st.info("""
 👋 **Bienvenido al cotizador mayorista RUUFE**
 
 Esta herramienta te permite armar tu pedido de forma rápida y visualizar una cotización estimada en tiempo real.
