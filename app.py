@@ -6,6 +6,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from datetime import datetime
 from reportlab.lib.styles import ParagraphStyle
+from io import BytesIO
 
 st.set_page_config(page_title="Cotizador mayorista", layout="wide")
 
@@ -220,7 +221,7 @@ if st.session_state.pedido:
     st.metric("Pallets estimados", round(pallets,2))
 
     st.success(f"Tipo de envío sugerido: {tipo_envio}")
-
+    
     # -----------------------------
     # PDF
     # -----------------------------
@@ -312,6 +313,58 @@ if st.session_state.pedido:
 
     with open(pdf_file, "rb") as f:
         st.download_button("Descargar cotización PDF", f, file_name="cotizacion.pdf")
+
+     #------------------
+     # Excel
+     #------------------
+
+     def generar_excel(df, cliente, pais, email, total_cajas, total_valor, tipo_envio):
+         output = BytesIO()
+
+         with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        
+               # Hoja 1: Pedido
+               df_export = df.copy()
+               df_export["Precio"] = df_export["Precio"].apply(lambda x: f"USD {x:,.2f}")
+               df_export["Total"] = df_export["Total"].apply(lambda x: f"USD {x:,.2f}")
+        
+               df_export.to_excel(writer, index=False, sheet_name='Pedido')
+ 
+               # Hoja 2: Resumen
+               resumen = pd.DataFrame({
+                 "Campo": ["Cliente", "País", "Email", "Total cajas", "Total USD", "Tipo de envío"],
+                 "Valor": [
+                     cliente if cliente else "",
+                     pais if pais else "",
+                     email if email else "",
+                     total_cajas,
+                     f"USD {total_valor:,.2f}",
+                     tipo_envio
+                 ]
+                })
+
+                resumen.to_excel(writer, index=False, sheet_name='Resumen')
+
+          output.seek(0)
+          return output
+
+                excel_file = generar_excel(
+                     pedido_df,
+                     cliente,
+                     pais,
+                     email,
+                     total_cajas,
+                     total_valor,
+                     tipo_envio
+                 )
+
+                 st.download_button(
+                     label="📥 Descargar pedido en Excel",
+                     data=excel_file,
+                     file_name="pedido.xlsx",
+                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                 )
+
 
 else:
     st.info("Aún no has agregado productos")
