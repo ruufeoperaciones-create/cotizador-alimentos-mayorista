@@ -62,9 +62,13 @@ if st.checkbox("Modo cliente nuevo"):
 # -----------------------------
 st.subheader("Datos del cliente")
 col1, col2, col3 = st.columns(3)
-cliente = col1.text_input("Nombre empresa")
-pais = col2.text_input("País destino")
-email = col3.text_input("Email")
+cliente = col1.text_input("Nombre empresa / cliente")
+direccion = col2.text_input("Dirección")
+ciudad = col3.text_input("Ciudad / Código postal")
+
+col4, col5 = st.columns(2)
+telefono = col4.text_input("Teléfono")
+email = col5.text_input("Email")
 fecha = datetime.now().strftime("%Y-%m-%d")
 
 st.divider()
@@ -241,7 +245,7 @@ def generar_pdf(df, total_cajas, total_valor, tipo_envio):
 # -----------------------------
 # FUNCION EXCEL
 # -----------------------------
-def generar_excel(df, cliente, pais, email, total_cajas, total_valor, tipo_envio):
+def generar_excel(df, cliente, direccion, ciudad, telefono, email, total_cajas, total_valor, tipo_envio):
 
     output = BytesIO()
 
@@ -253,17 +257,19 @@ def generar_excel(df, cliente, pais, email, total_cajas, total_valor, tipo_envio
 
         df_export.to_excel(writer, index=False, sheet_name='Pedido')
 
-        resumen = pd.DataFrame({
-            "Campo": ["Cliente","País","Email","Total cajas","Total USD","Tipo de envío"],
+        # Hoja 2: Cliente
+        cliente_df = pd.DataFrame({
+            "Campo": ["Nombre", "Dirección", "Ciudad/Código postal", "Teléfono", "Email"],
             "Valor": [
-                cliente, pais, email,
-                total_cajas,
-                f"USD {total_valor:,.2f}",
-                tipo_envio
+                cliente,
+                direccion,
+                ciudad,
+                telefono,
+                email
             ]
-        })
+         })
 
-        resumen.to_excel(writer, index=False, sheet_name='Resumen')
+        cliente_df.to_excel(writer, index=False, sheet_name='Cliente')
 
     output.seek(0)
     return output
@@ -301,7 +307,17 @@ if st.session_state.pedido:
     st.success(f"Tipo de envío sugerido: {tipo_envio}")
 
     pdf_file = generar_pdf(pedido_df, total_cajas, total_valor, tipo_envio)
-    excel_file = generar_excel(pedido_df, cliente, pais, email, total_cajas, total_valor, tipo_envio)
+    excel_file = generar_excel(
+        pedido_df,
+        cliente,
+        direccion,
+        ciudad,
+        telefono,
+        email,
+        total_cajas,
+        total_valor,
+        tipo_envio
+     )
 
     col1, col2 = st.columns(2)
 
