@@ -174,7 +174,7 @@ st.divider()
 # -----------------------------
 # FUNCION PDF
 # -----------------------------
-def generar_pdf(df, total_cajas, total_valor, tipo_envio):
+def generar_pdf(df, cliente, direccion, ciudad, telefono, email, total_cajas, total_valor, tipo_envio):
 
     file_path = "cotizacion.pdf"
     doc = SimpleDocTemplate(file_path, leftMargin=40, rightMargin=40, topMargin=40, bottomMargin=40)
@@ -197,7 +197,9 @@ def generar_pdf(df, total_cajas, total_valor, tipo_envio):
     elements.append(Spacer(1,12))
 
     elements.append(campo("Cliente", cliente))
-    elements.append(campo("País", pais))
+    elements.append(campo("Dirección", direccion))
+    elements.append(campo("Ciudad / Código postal", ciudad))
+    elements.append(campo("Teléfono", telefono))
     elements.append(campo("Email", email))
     elements.append(campo("Fecha", fecha))
 
@@ -306,7 +308,17 @@ if st.session_state.pedido:
 
     st.success(f"Tipo de envío sugerido: {tipo_envio}")
 
-    pdf_file = generar_pdf(pedido_df, total_cajas, total_valor, tipo_envio)
+    pdf_file = generar_pdf(
+        pedido_df,
+        cliente,
+        direccion,
+        ciudad,
+        telefono,
+        email,
+        total_cajas,
+        total_valor,
+        tipo_envio
+    )
     excel_file = generar_excel(
         pedido_df,
         cliente,
