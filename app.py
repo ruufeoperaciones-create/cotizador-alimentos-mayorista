@@ -49,7 +49,7 @@ if st.checkbox("Modo cliente nuevo"):
 👋 **Bienvenido al cotizador mayorista**
 
 1. Selecciona tipo de compra  
-2. Filtra productos  
+2. Filtra productos por marca o categoría  
 3. Ingresa cantidades  
 4. Revisa el resumen  
 5. Descarga tu cotización  
@@ -87,14 +87,14 @@ colf1, colf2, colf3 = st.columns(3)
 
 search = colf1.text_input("Buscar producto")
 
-marcas = ["Todas"] + sorted(df_original['MARCA'].dropna().unique())
+marcas = ["Todas"] + sorted(df_original['MARCA'].dropna().unique().tolist())
 marca_sel = colf2.selectbox("Marca", marcas)
 
-categorias = ["Todas"] + sorted(df_original['CATEGORÍA'].dropna().unique())
+categorias = ["Todas"] + sorted(df_original['CATEGORÍA'].dropna().unique().tolist())
 categoria_sel = colf3.selectbox("Categoría", categorias)
 
 if search:
-    df = df[df['PRODUCTO'].astype(str).str.contains(search, case=False)]
+    df = df[df['PRODUCTO'].astype(str).str.contains(search, case=False, na=False)]
 
 if marca_sel != "Todas":
     df = df[df['MARCA'] == marca_sel]
@@ -102,35 +102,55 @@ if marca_sel != "Todas":
 if categoria_sel != "Todas":
     df = df[df['CATEGORÍA'] == categoria_sel]
 
+st.write(f"Productos mostrados: {len(df)}")
+
+st.divider()
+
 # -----------------------------
-# CATALOGO
+# CATALOGO AGRUPADO
 # -----------------------------
 for marca in sorted(df['MARCA'].dropna().unique()):
     df_marca = df[df['MARCA'] == marca]
 
-    with st.expander(marca):
+    with st.expander(f"{marca}", expanded=False):
+
+        cols = st.columns([3,2,2,2,2,2,2])
+        headers = ["Producto","Marca","Presentación","Presentaciones por caja","MOQ","Precio Caja (USD)","Cantidad"]
+        for col, h in zip(cols, headers):
+            col.markdown(f"**{h}**")
+
         for i, row in df_marca.iterrows():
 
             producto = row.get('PRODUCTO', '')
-            precio_raw = row.get('PRECIO EXW CAJA USD', 0)
+            marca_val = row.get('MARCA', '')
+            presentacion = row.get('PRESENTACIÓN', '')
+            und_caja = row.get('PRESENTACIONES POR CAJA', '')
 
+            precio_raw = row.get('PRECIO EXW CAJA USD', 0)
             try:
-                precio = float(str(precio_raw).replace("USD", "").replace(",", "."))
+                precio = float(str(precio_raw).replace("USD","").replace(",",".").strip())
             except:
                 precio = 0
 
-            col1, col2, col3 = st.columns([4,2,2])
+            cols = st.columns([3,2,2,2,2,2,2])
+            cols[0].write(producto)
+            cols[1].write(marca_val)
+            cols[2].write(presentacion)
+            cols[3].write(und_caja)
+            cols[4].write(MOQ_label)
+            cols[5].write(f"USD {precio:,.2f}")
 
-            col1.write(producto)
-            col2.write(f"USD {precio:,.2f}")
-
-            cantidad = col3.number_input("Cantidad", min_value=0, step=MOQ_val, key=f"qty_{i}")
+            cantidad = cols[6].number_input("", min_value=0, step=MOQ_val, key=f"qty_{i}")
 
             if cantidad > 0:
+                st.success("✔ Agregado al pedido")
+
+                cantidad_label = f"{cantidad} Caja" if cantidad == 1 else f"{cantidad} Cajas"
+
                 item = {
                     "Producto": producto,
-                    "Marca": marca,
-                    "Cantidad": f"{cantidad} Caja" if cantidad == 1 else f"{cantidad} Cajas",
+                    "Marca": marca_val,
+                    "Cantidad": cantidad_label,
                     "Precio": precio,
                     "Total": cantidad * precio
                 }
@@ -151,25 +171,33 @@ st.divider()
 # FUNCION PDF
 # -----------------------------
 def generar_pdf(df, total_cajas, total_valor, tipo_envio):
+
     file_path = "cotizacion.pdf"
     doc = SimpleDocTemplate(file_path, leftMargin=40, rightMargin=40, topMargin=40, bottomMargin=40)
+
     elements = []
     styles = getSampleStyleSheet()
 
     wrap_style = ParagraphStyle(name='wrap', fontSize=8, leading=9)
 
     def campo(label, valor):
-        valor = valor if valor else "____________________"
+        valor = valor if valor else "______________________"
         return Paragraph(f"<b>{label}:</b> {valor}", styles['Normal'])
 
+    try:
+        elements.append(Image("logo.png", width=100, height=50))
+    except:
+        pass
+
     elements.append(Paragraph("Cotización", styles['Title']))
-    elements.append(Spacer(1,10))
+    elements.append(Spacer(1,12))
 
     elements.append(campo("Cliente", cliente))
     elements.append(campo("País", pais))
     elements.append(campo("Email", email))
     elements.append(campo("Fecha", fecha))
-    elements.append(Spacer(1,10))
+
+    elements.append(Spacer(1,12))
 
     data = [["Producto","Marca","Cantidad","Precio","Total"]]
 
@@ -182,25 +210,30 @@ def generar_pdf(df, total_cajas, total_valor, tipo_envio):
             f"USD {row['Total']:,.2f}"
         ])
 
-    table = Table(data, colWidths=[150,100,80,80,80])
+    table = Table(data, colWidths=[150,100,90,90,90])
+
     table.setStyle(TableStyle([
-        ('GRID',(0,0),(-1,-1),1,colors.black),
-        ('BACKGROUND',(0,0),(-1,0),colors.grey)
+        ('BACKGROUND',(0,0),(-1,0),colors.grey),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.whitesmoke),
+        ('GRID',(0,0),(-1,-1),1,colors.black)
     ]))
 
     elements.append(table)
-    elements.append(Spacer(1,10))
+    elements.append(Spacer(1,12))
 
-    totales = [
-        ["", f"Total cajas: {total_cajas}"],
-        ["", f"Total USD: {total_valor:,.2f}"],
+    totales_data = [
+        ["", f"Total cajas: {total_cajas} Cajas"],
+        ["", f"Total USD: USD {total_valor:,.2f}"],
         ["", f"Envío: {tipo_envio}"]
     ]
 
-    t = Table(totales, colWidths=[300,200])
-    t.setStyle(TableStyle([('ALIGN',(1,0),(-1,-1),'RIGHT')]))
+    totales_table = Table(totales_data, colWidths=[300,200])
+    totales_table.setStyle(TableStyle([
+        ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+        ('FONTNAME', (1,0), (1,-1), 'Helvetica-Bold')
+    ]))
 
-    elements.append(t)
+    elements.append(totales_table)
 
     doc.build(elements)
     return file_path
@@ -209,15 +242,25 @@ def generar_pdf(df, total_cajas, total_valor, tipo_envio):
 # FUNCION EXCEL
 # -----------------------------
 def generar_excel(df, cliente, pais, email, total_cajas, total_valor, tipo_envio):
+
     output = BytesIO()
 
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
+
         df_export = df.copy()
+        df_export["Precio"] = df_export["Precio"].apply(lambda x: f"USD {x:,.2f}")
+        df_export["Total"] = df_export["Total"].apply(lambda x: f"USD {x:,.2f}")
+
         df_export.to_excel(writer, index=False, sheet_name='Pedido')
 
         resumen = pd.DataFrame({
             "Campo": ["Cliente","País","Email","Total cajas","Total USD","Tipo de envío"],
-            "Valor": [cliente,pais,email,total_cajas,total_valor,tipo_envio]
+            "Valor": [
+                cliente, pais, email,
+                total_cajas,
+                f"USD {total_valor:,.2f}",
+                tipo_envio
+            ]
         })
 
         resumen.to_excel(writer, index=False, sheet_name='Resumen')
@@ -228,27 +271,34 @@ def generar_excel(df, cliente, pais, email, total_cajas, total_valor, tipo_envio
 # -----------------------------
 # RESUMEN
 # -----------------------------
+st.subheader("Resumen del pedido")
+
 if st.session_state.pedido:
 
     pedido_df = pd.DataFrame(st.session_state.pedido)
 
-    total_cajas = sum([int(x.split()[0]) for x in pedido_df["Cantidad"]])
+    total_cajas = sum([int(str(x).split()[0]) for x in pedido_df["Cantidad"]])
     total_valor = pedido_df["Total"].sum()
     pallets = total_cajas / 36
 
     if pedido_tipo == "Cajas sueltas":
-        tipo_envio = "Courier"
+        tipo_envio = "Carga suelta / Courier"
     elif pedido_tipo == "Pallet consolidado":
-        tipo_envio = f"{round(pallets,1)} pallets"
+        tipo_envio = "No cumple mínimo" if total_cajas < 80 else f"{round(pallets,1)} pallets"
     else:
         tipo_envio = "Contenedor"
 
-    st.dataframe(pedido_df)
+    pedido_df_display = pedido_df.copy()
+    pedido_df_display["Precio"] = pedido_df_display["Precio"].apply(lambda x: f"USD {x:,.2f}")
+    pedido_df_display["Total"] = pedido_df_display["Total"].apply(lambda x: f"USD {x:,.2f}")
 
-    st.metric("Total cajas", total_cajas)
-    st.metric("Total USD", f"{total_valor:,.2f}")
+    st.dataframe(pedido_df_display, use_container_width=True)
 
-    st.success(f"Envío sugerido: {tipo_envio}")
+    st.metric("Total cajas", f"{total_cajas} Cajas")
+    st.metric("Total USD", f"USD {total_valor:,.2f}")
+    st.metric("Pallets estimados", round(pallets,2))
+
+    st.success(f"Tipo de envío sugerido: {tipo_envio}")
 
     pdf_file = generar_pdf(pedido_df, total_cajas, total_valor, tipo_envio)
     excel_file = generar_excel(pedido_df, cliente, pais, email, total_cajas, total_valor, tipo_envio)
@@ -260,7 +310,12 @@ if st.session_state.pedido:
             st.download_button("📄 Descargar PDF", f, file_name="cotizacion.pdf")
 
     with col2:
-        st.download_button("📊 Descargar Excel", excel_file, file_name="pedido.xlsx")
+        st.download_button(
+            "📊 Descargar Excel",
+            data=excel_file,
+            file_name="pedido.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
 else:
     st.info("Aún no has agregado productos")
