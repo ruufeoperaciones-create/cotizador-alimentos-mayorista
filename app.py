@@ -45,16 +45,40 @@ with col_title:
 # MODO CLIENTE NUEVO
 # -----------------------------
 if st.checkbox("Modo cliente nuevo"):
-    st.info("""
-👋 **Bienvenido al cotizador mayorista**
+st.info("""
+👋 **Bienvenido al cotizador mayorista RUUFE**
 
-1. Selecciona tipo de compra  
-2. Filtra productos por marca o categoría  
-3. Ingresa cantidades  
-4. Revisa el resumen  
-5. Descarga tu cotización  
+Esta herramienta te permite armar tu pedido de forma rápida y visualizar una cotización estimada en tiempo real.
 
-💡 A mayor volumen, mejor eficiencia logística
+**¿Cómo funciona?**
+
+**1. Selecciona el tipo de compra**
+- *Cajas sueltas*: puedes comprar desde 1 caja por producto  
+- *Pallet consolidado*: recomendado para optimizar costos logísticos  
+- *Contenedor*: requiere mínimo 25 cajas por producto  
+
+**2. Encuentra tus productos**
+- Usa el buscador para ubicar productos específicos  
+- Filtra por *marca* o *categoría*  
+- Explora el catálogo organizado por marcas  
+
+**3. Agrega cantidades**
+- Ingresa el número de cajas por producto  
+- El sistema respeta automáticamente los mínimos de compra (MOQ)  
+- Verás confirmación inmediata al agregar productos  
+
+**4. Revisa tu pedido**
+- En la parte inferior encontrarás el resumen completo  
+- Incluye totales, número de cajas y valor en USD  
+- También verás una sugerencia del tipo de envío según el volumen  
+
+**5. Descarga o envía tu cotización**
+- Puedes descargar tu pedido en PDF o Excel  
+- Este documento te servirá como base para continuar el proceso de compra  
+
+💡 **Recomendación:** A mayor volumen, mejores eficiencias logísticas y costos por unidad.
+
+Si tienes dudas, nuestro equipo comercial podrá asesorarte en el siguiente paso.
 """)
 
 # -----------------------------
